@@ -65,7 +65,7 @@ def get_distance(pix_h, ori_h, f):
     #print('222222222222222222222')
     d = (ori_h * f)/ (abs(pix_h))
     #print('3333333333333333333333')
-    d = d/12*0.3048
+    d = d/12 * 30.48
     #print('444444444444444444')
         
     return d
@@ -77,7 +77,7 @@ def modifiy_f(f, d, warnLimit):
 
 @smart_inference_mode()
 def run(
-        weights=ROOT / 'yolov5s.pt',  # model path or triton URL
+        weights=ROOT / 'final.pt',  # model path or triton URL
         source=ROOT / 'data/images',  # file/dir/URL/glob/screen/0(webcam)
         data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
         imgsz=(640, 640),  # inference size (height, width)
@@ -172,21 +172,25 @@ def run(
             else:
                 p, im0, frame = path, im0s.copy(), getattr(dataset, 'frame', 0)
             ## code 추가
-            class_num = 5
-            ori_h = [95, 65, 15] # orginal height of each classes : car, person, bicycle, motorbike
-            f = 250 # default focal length
+            class_num = 7
+            ori_h = [40, 160, 110] # orginal height of each classes : car, person, bicycle, motorbike
+            f = 246 # default focal length
             warnLimit = 6
             d = []
             
+
             #hs = pred[i][:,2].cpu().numpy()
             #print('44444444444444444444444444',type(hs))
             p = Path(p)  # to Path
             save_path = str(save_dir / p.name)  # im.jpg
             txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
-            s += '%gx%g ' % im.shape[2:]  # print string
+            s += ' %gx%g ' % im.shape[2:]  # print string
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
             imc = im0.copy() if save_crop else im0  # for save_crop
             annotator = Annotator(im0, line_width=line_thickness, example=str(names))
+            
+
+
             '''
             cnt = 0
             while cnt < len(det) :
@@ -221,11 +225,11 @@ def run(
                     d.append(0)
                 cnt = cnt + 1
             '''
+ 
 
-                
             #print(d)
             #if class_num in [0,1,2] and conf > 0.7:
-                #d = get_distance(hs ,ori_h[class_num], f)
+            #d = get_distance(hs ,ori_h[class_num], f)
             #d = get_distance(hs ,ori_h, f)
             if len(det):
                 # Rescale boxes from img_size to im0 size
@@ -244,9 +248,10 @@ def run(
                 print('det_r',reversed(det))
                 for *xyxy, conf, cls in reversed(det):
                     _,_,_,hs = xyxy
+
                     #print(hs)
                     #print(type(*xyxy))
-                    if names[int(cls)] == 'bus':
+                    if names[int(cls)] == 'traffice light':
                         class_num = 0
                     #print(cnt,names[int(pred[i][cnt,5])])
             
@@ -256,13 +261,21 @@ def run(
                         #print(cnt, names[int(pred[i][cnt,5])])
                 
                     ##class 2: tie    
-                    if names[int(cls)] == 'tie':
+                    if names[int(cls)] == 'bicycle':
                         class_num = 2
                         #print(cnt, names[int(pred[i][cnt,5])])
-                                        
 
-                    if class_num in [0,1,2] and (conf) > 0.7:
+                    if names[int(cls)] == 'scooter':
+                        class_num = 3
+
+                    if names[int(cls)] == 'bollard':
+                        class_num = 4
+                        
+                   
+
+                    if class_num in [0,1,2,3,4] and (conf) > 0.7:
                         dist = get_distance(hs.cpu().numpy() ,ori_h[class_num], f)
+                        #print(hs.cpu().numpy())
                     else:
                         dist = 0
                     #hs = pred[i][:,2].cpu().numpy()
@@ -328,7 +341,7 @@ def run(
 
 def parse_opt():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s.pt', help='model path or triton URL')
+    parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'final.pt', help='model path or triton URL')
     parser.add_argument('--source', type=str, default=ROOT / 'data/images', help='file/dir/URL/glob/screen/0(webcam)')
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='(optional) dataset.yaml path')
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
